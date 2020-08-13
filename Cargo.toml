@@ -1,0 +1,9 @@
+[package]
+name = "globe"
+version = "0.1.0"
+authors = ["adamsky <adamsky@enum.space>"]
+edition = "2018"
+description = "Customizable ASCII globe generator."
+
+[dev-dependencies]
+crossterm = "0.17.7"
