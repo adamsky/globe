@@ -3,6 +3,7 @@
 extern crate crossterm;
 
 use std::io::{stdout, BufRead, BufReader, Read, Write};
+use std::path::Path;
 use std::time::Duration;
 
 use crossterm::{
@@ -21,7 +22,12 @@ fn main() {
     let mut stdout = stdout();
     stdout.execute(cursor::Hide);
 
-    let mut globe = GlobeConfig::new().load_texture_from("earth.txt").build();
+    let mut earth_texture_path = std::env::current_dir().unwrap();
+    earth_texture_path.push("examples/ascii/earth.txt");
+
+    let mut globe = GlobeConfig::new()
+        .load_texture_from(earth_texture_path.to_str().unwrap())
+        .build();
     let mut canvas = Canvas::new(250, 250, None);
 
     let mut angle_offset = 0.;
@@ -88,14 +94,14 @@ fn main() {
         stdout.execute(crossterm::terminal::Clear(
             crossterm::terminal::ClearType::FromCursorDown,
         ));
-        println!(
-            "camera.x: {}, camera.y: {}, camera.z: {}",
-            globe.camera.x, globe.camera.y, globe.camera.z
-        );
-        println!(
-            "cam_xy: {}, cam_z: {}, cam_zoom: {}, angle: {}",
-            cam_xy, cam_z, cam_zoom, globe.angle
-        );
+        //println!(
+        //"camera.x: {}, camera.y: {}, camera.z: {}",
+        //globe.camera.x, globe.camera.y, globe.camera.z
+        //);
+        //println!(
+        //"cam_xy: {}, cam_z: {}, cam_zoom: {}, angle: {}",
+        //cam_xy, cam_z, cam_zoom, globe.angle
+        //);
         gotoxy(0, 0);
 
         //update camera position
