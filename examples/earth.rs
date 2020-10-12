@@ -27,13 +27,14 @@ use crossterm::{
 
 use crossterm::event::MouseEvent;
 use crossterm::terminal::enable_raw_mode;
-use globe::{Camera, Canvas, Globe, GlobeConfig};
+use globe::{Camera, Canvas, Globe, GlobeConfig, PI};
 
 fn main() {
     crossterm::terminal::enable_raw_mode().unwrap();
 
     let mut stdout = stdout();
     stdout.execute(cursor::Hide);
+    stdout.execute(cursor::DisableBlinking);
     stdout.execute(crossterm::event::EnableMouseCapture);
 
     let mut earth_texture_path = std::env::current_dir().unwrap();
@@ -43,8 +44,14 @@ fn main() {
         .load_texture_from(earth_texture_path.to_str().unwrap())
         .build();
     // let mut canvas = Canvas::new(450, 450, None);
-    let (w, h) = crossterm::terminal::size().unwrap();
-    let mut canvas = Canvas::new(h * 8, h * 8, None);
+    let mut term_size = crossterm::terminal::size().unwrap();
+    let mut canvas = if term_size.0 > term_size.1 {
+        Canvas::new(term_size.1 * 8, term_size.1 * 8, None)
+    } else {
+        Canvas::new(term_size.0 * 4, term_size.0 * 4, None)
+    };
+
+    // stdout.execute(crossterm::cursor::MoveTo(100, 0));
 
     let mut angle_offset = 0.;
     let mut cam_zoom = 2.;
@@ -55,7 +62,7 @@ fn main() {
     let mut last_drag_pos = None;
 
     loop {
-        if poll(Duration::from_millis(10)).unwrap() {
+        if poll(Duration::from_millis(100)).unwrap() {
             match read().unwrap() {
                 Event::Key(event) => match event.code {
                     KeyCode::Char(c) => return,
@@ -111,15 +118,19 @@ fn main() {
                     _ => last_drag_pos = None,
                 },
                 Event::Resize(width, height) => {
-                    let ratio = width as f64 / height as f64;
-                    canvas = Canvas::new((height * 6) as u16, height * 6, None);
-                    // 200 / 60 = 3.3
+                    term_size = (width, height);
+                    canvas = if width > height {
+                        Canvas::new(height * 8, height * 8, None)
+                    } else {
+                        Canvas::new(width * 4, width * 4, None)
+                    };
                 }
                 _ => (),
             }
         }
 
         globe.camera = Camera::new(cam_zoom, cam_xy, cam_z);
+
         canvas.clear();
 
         // render globe on the canvas
@@ -128,21 +139,31 @@ fn main() {
         // print canvas to terminal
         let (sizex, sizey) = canvas.get_size();
         for i in 0..sizey / 8 {
+            stdout.queue(crossterm::terminal::Clear(
+                crossterm::terminal::ClearType::CurrentLine,
+            ));
             for j in 0..sizex / 4 {
-                stdout.execute(Print(canvas.matrix[i][j]));
+                stdout.queue(Print(canvas.matrix[i][j]));
             }
-            stdout.execute(cursor::MoveToNextLine(1));
+            // stdout.execute(cursor::MoveToNextLine(1));
+            stdout.queue(cursor::MoveDown(1));
+            stdout.queue(cursor::MoveLeft((sizex / 4) as u16));
+            stdout.flush().unwrap();
         }
 
-        stdout.execute(crossterm::terminal::Clear(
-            crossterm::terminal::ClearType::FromCursorDown,
-        ));
-
-        stdout.execute(crossterm::cursor::MoveTo(0, 0));
+        if term_size.0 / 2 > term_size.1 {
+            // center the cursor on the x axis
+            stdout.execute(crossterm::cursor::MoveTo(
+                (sizex / 8) as u16 - ((sizex / 8) / 4) as u16,
+                // (term_size.0 / 2) - (term_size.0 / 4) as u16,
+                // term_size.0 / 2,
+                0,
+            ));
+        }
 
         //update camera position
         // std::thread::sleep(std::time::Duration::from_millis(10));
-        //globe.angle += 1. * globe::PI / 10.;
-        //angle_offset += 0. * PI / 10.;
+        // globe.angle += 1. * globe::PI / 10.;
+        // angle_offset += 0. * PI / 10.;
     }
 }
