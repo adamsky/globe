@@ -1,10 +1,6 @@
 # globe
 
-Customizable ASCII globe generator.
-
-
-
-![](.github/earth_dragging.gif)
+Customizable ASCII globe generator library.
 
 ## Credits
 

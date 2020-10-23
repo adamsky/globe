@@ -1,0 +1,19 @@
+[package]
+name = "globe-cli"
+version = "0.1.0"
+authors = ["adamsky <adamsky@enum.space>"]
+edition = "2018"
+repository = "https://github.com/adamsky/globe"
+description = "Display an interactive ASCII globe in your terminal."
+keywords = ["interactive", "ASCII", "globe", "terminal", "cli"]
+readme = "README.md"
+license = "GPL-3.0"
+
+[[bin]]
+name = "globe"
+path = "src/main.rs"
+
+[dependencies]
+globe = { path = "../globe" }
+crossterm = "0.17.7"
+

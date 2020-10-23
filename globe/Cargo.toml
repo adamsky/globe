@@ -1,0 +1,10 @@
+[package]
+name = "globe"
+version = "0.1.0"
+authors = ["adamsky <adamsky@enum.space>"]
+edition = "2018"
+repository = "https://github.com/adamsky/globe"
+description = "Customizable ASCII globe generator."
+keywords = ["interactive", "ASCII", "globe", "terminal", "cli"]
+readme = "README.md"
+license = "GPL-3.0"

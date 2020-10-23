@@ -11,8 +11,6 @@
 
 #![allow(warnings)]
 
-extern crate crossterm;
-
 use std::io::{stdout, BufRead, BufReader, Read, Write};
 use std::path::Path;
 use std::time::Duration;
@@ -38,7 +36,8 @@ fn main() {
     stdout.execute(crossterm::event::EnableMouseCapture);
 
     let mut earth_texture_path = std::env::current_dir().unwrap();
-    earth_texture_path.push("examples/ascii/earth.txt");
+    earth_texture_path.push("globe-cli/ascii/earth.txt");
+    println!("{:?}", earth_texture_path);
 
     let mut globe = GlobeConfig::new()
         .load_texture_from(earth_texture_path.to_str().unwrap())
