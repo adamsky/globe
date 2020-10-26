@@ -1,5 +1,5 @@
 # globe-cli
 
-Display an interactive ASCII globe in your terminal.
+Display an ASCII globe in your terminal.
 
-![](.github/earth_dragging.gif)
+![](../.github/earth_dragging.gif)
