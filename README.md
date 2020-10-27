@@ -34,12 +34,40 @@ globe -i
 
 ## Use the library
 
-To use `globe` within your Rust project, first add it to your dependencies:
+To use `globe` within your Rust project, add it to your dependencies:
 ```
 [dependencies]
 globe = "0.1.0"
 ```
 
+First create a `Globe`:
+```
+let mut globe = GlobeConfig::new()
+    .use_template(GlobeTemplate::Earth)
+    .with_camera(CameraConfig::default())
+    .build();
+```
+
+Next make a new `Canvas` and render the `Globe` onto it:
+```
+let mut canvas = Canvas::new(250, 250, None);
+globe.render_on(&mut canvas);
+```
+
+You can now print out the canvas to the terminal:
+```
+let (sizex, sizey) = canvas.get_size();
+// default character size is 4 by 8
+for i in 0..sizey / 8 {
+    for j in 0..sizex / 4 {
+        print!("{}", canvas.matrix[i][j]);
+    }
+    println!();
+}
+``` 
+
+See `globe-cli` code for examples of runtime changes to the `Globe` and it's
+`Camera`.
 
 ## Credits
 
