@@ -73,7 +73,7 @@ fn start_screensaver() {
             match read().unwrap() {
                 Event::Key(event) => match event.code {
                     // pressing any char key exists the program
-                    KeyCode::Char(c) => return,
+                    KeyCode::Char(c) => break,
                     _ => (),
                 },
                 Event::Resize(width, height) => {
@@ -119,6 +119,12 @@ fn start_screensaver() {
             ));
         }
     }
+
+    stdout.execute(cursor::Show);
+    stdout.execute(cursor::EnableBlinking);
+    stdout.execute(crossterm::event::EnableMouseCapture);
+
+    crossterm::terminal::disable_raw_mode().unwrap();
 }
 
 fn start_interactive() {
@@ -151,7 +157,7 @@ fn start_interactive() {
         if poll(Duration::from_millis(100)).unwrap() {
             match read().unwrap() {
                 Event::Key(event) => match event.code {
-                    KeyCode::Char(c) => return,
+                    KeyCode::Char(c) => break,
                     KeyCode::PageUp => cam_zoom += 0.1,
                     KeyCode::PageDown => cam_zoom -= 0.1,
                     KeyCode::Up => {
@@ -244,4 +250,10 @@ fn start_interactive() {
             ));
         }
     }
+
+    stdout.execute(cursor::Show);
+    stdout.execute(cursor::EnableBlinking);
+    stdout.execute(crossterm::event::EnableMouseCapture);
+
+    crossterm::terminal::disable_raw_mode().unwrap();
 }
