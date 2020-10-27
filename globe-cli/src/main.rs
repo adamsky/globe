@@ -50,7 +50,6 @@ fn start_screensaver() {
     let mut stdout = stdout();
     stdout.execute(cursor::Hide);
     stdout.execute(cursor::DisableBlinking);
-    stdout.execute(crossterm::event::DisableMouseCapture);
 
     let mut globe = GlobeConfig::new()
         .use_template(GlobeTemplate::Earth)
@@ -122,7 +121,6 @@ fn start_screensaver() {
 
     stdout.execute(cursor::Show);
     stdout.execute(cursor::EnableBlinking);
-    stdout.execute(crossterm::event::EnableMouseCapture);
 
     crossterm::terminal::disable_raw_mode().unwrap();
 }
@@ -253,7 +251,7 @@ fn start_interactive() {
 
     stdout.execute(cursor::Show);
     stdout.execute(cursor::EnableBlinking);
-    stdout.execute(crossterm::event::EnableMouseCapture);
+    stdout.execute(crossterm::event::DisableMouseCapture);
 
     crossterm::terminal::disable_raw_mode().unwrap();
 }
