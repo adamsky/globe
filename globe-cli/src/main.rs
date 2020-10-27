@@ -7,29 +7,28 @@
 //!
 //! **Keyboard**: use arrow keys to rotate, *PgUp* and *PgDown* to zoom.
 
-#![allow(warnings)]
+#![warn(clippy::all)]
 
-use std::io::{stdout, BufRead, BufReader, Read, Write};
-use std::path::Path;
+use std::f32::consts::PI;
+use std::io::{stdout, Write};
 use std::time::Duration;
 
 use clap::{App, AppSettings, Arg};
-use crossterm::event::MouseEvent;
-use crossterm::terminal::enable_raw_mode;
+use crossterm::{event::MouseEvent, terminal};
 use crossterm::{
     cursor,
-    event::{poll, read, Event, KeyCode, KeyEvent},
-    execute, queue,
+    event::{poll, read, Event, KeyCode},
     style::Print,
     ExecutableCommand, QueueableCommand,
 };
-use globe::{Camera, Canvas, Globe, GlobeConfig, GlobeTemplate, PI};
 
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-pub const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
+use globe::{Camera, Canvas, GlobeConfig, GlobeTemplate};
+
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const AUTHORS: &str = env!("CARGO_PKG_AUTHORS");
 
 fn main() {
-    let mut app = App::new("globe-cli")
+    let app = App::new("globe-cli")
         .version(VERSION)
         .author(AUTHORS)
         .setting(AppSettings::ArgRequiredElseHelp)
@@ -45,36 +44,36 @@ fn main() {
 }
 
 fn start_screensaver() {
-    crossterm::terminal::enable_raw_mode().unwrap();
+    terminal::enable_raw_mode().unwrap();
 
     let mut stdout = stdout();
-    stdout.execute(cursor::Hide);
-    stdout.execute(cursor::DisableBlinking);
+    stdout.execute(cursor::Hide).unwrap();
+    stdout.execute(cursor::DisableBlinking).unwrap();
 
     let mut globe = GlobeConfig::new()
         .use_template(GlobeTemplate::Earth)
         .build();
-    let mut term_size = crossterm::terminal::size().unwrap();
+    let mut term_size = terminal::size().unwrap();
     let mut canvas = if term_size.0 > term_size.1 {
         Canvas::new(term_size.1 * 8, term_size.1 * 8, None)
     } else {
         Canvas::new(term_size.0 * 4, term_size.0 * 4, None)
     };
 
-    let mut angle_offset = 0.;
-    let mut cam_zoom = 2.;
-    let mut cam_xy = 0.;
-    let mut cam_z = 0.;
+    let cam_zoom = 2.;
+    let cam_xy = 0.;
+    let cam_z = 0.;
     globe.camera = Camera::new(cam_zoom, cam_xy, cam_z);
 
     loop {
         if poll(Duration::from_millis(100)).unwrap() {
             match read().unwrap() {
-                Event::Key(event) => match event.code {
+                Event::Key(event) => {
                     // pressing any char key exists the program
-                    KeyCode::Char(c) => break,
-                    _ => (),
-                },
+                    if let KeyCode::Char(_) = event.code {
+                        break
+                    }
+                }
                 Event::Resize(width, height) => {
                     term_size = (width, height);
                     canvas = if width > height {
@@ -88,7 +87,7 @@ fn start_screensaver() {
         }
 
         // make the globe spin
-        globe.angle += -1. * globe::PI / 50.;
+        globe.angle += -1. * PI / 50.;
 
         globe.camera = Camera::new(cam_zoom, cam_xy, cam_z);
         canvas.clear();
@@ -97,55 +96,54 @@ fn start_screensaver() {
         globe.render_on(&mut canvas);
 
         // print canvas to terminal
-        let (sizex, sizey) = canvas.get_size();
-        for i in 0..sizey / 8 {
-            stdout.queue(crossterm::terminal::Clear(
-                crossterm::terminal::ClearType::CurrentLine,
-            ));
-            for j in 0..sizex / 4 {
-                stdout.queue(Print(canvas.matrix[i][j]));
+        let (size_x, size_y) = canvas.get_size();
+        for i in 0..size_y / 8 {
+            stdout.queue(terminal::Clear(
+                terminal::ClearType::CurrentLine,
+            )).unwrap();
+            for j in 0..size_x / 4 {
+                stdout.queue(Print(canvas.matrix[i][j])).unwrap();
             }
-            stdout.queue(cursor::MoveDown(1));
-            stdout.queue(cursor::MoveLeft((sizex / 4) as u16));
+            stdout.queue(cursor::MoveDown(1)).unwrap();
+            stdout.queue(cursor::MoveLeft((size_x / 4) as u16)).unwrap();
             stdout.flush().unwrap();
         }
 
         if term_size.0 / 2 > term_size.1 {
             // center the cursor on the x axis
             stdout.execute(crossterm::cursor::MoveTo(
-                (sizex / 8) as u16 - ((sizex / 8) / 4) as u16,
+                (size_x / 8) as u16 - ((size_x / 8) / 4) as u16,
                 0,
-            ));
+            )).unwrap();
         }
     }
 
-    stdout.execute(cursor::Show);
-    stdout.execute(cursor::EnableBlinking);
+    stdout.execute(cursor::Show).unwrap();
+    stdout.execute(cursor::EnableBlinking).unwrap();
 
-    crossterm::terminal::disable_raw_mode().unwrap();
+    terminal::disable_raw_mode().unwrap();
 }
 
 fn start_interactive() {
-    crossterm::terminal::enable_raw_mode().unwrap();
+    terminal::enable_raw_mode().unwrap();
 
     let mut stdout = stdout();
-    stdout.execute(cursor::Hide);
-    stdout.execute(cursor::DisableBlinking);
-    stdout.execute(crossterm::event::EnableMouseCapture);
+    stdout.execute(cursor::Hide).unwrap();
+    stdout.execute(cursor::DisableBlinking).unwrap();
+    stdout.execute(crossterm::event::EnableMouseCapture).unwrap();
 
     let mut globe = GlobeConfig::new()
         .use_template(GlobeTemplate::Earth)
         .build();
-    let mut term_size = crossterm::terminal::size().unwrap();
+    let mut term_size = terminal::size().unwrap();
     let mut canvas = if term_size.0 > term_size.1 {
         Canvas::new(term_size.1 * 8, term_size.1 * 8, None)
     } else {
         Canvas::new(term_size.0 * 4, term_size.0 * 4, None)
     };
 
-    let mut angle_offset = 0.;
     let mut cam_zoom = 2.;
-    let mut cam_xy = 0.;
+    let cam_xy = 0.;
     let mut cam_z = 0.;
     globe.camera = Camera::new(cam_zoom, cam_xy, cam_z);
 
@@ -155,7 +153,7 @@ fn start_interactive() {
         if poll(Duration::from_millis(100)).unwrap() {
             match read().unwrap() {
                 Event::Key(event) => match event.code {
-                    KeyCode::Char(c) => break,
+                    KeyCode::Char(_) => break,
                     KeyCode::PageUp => cam_zoom += 0.1,
                     KeyCode::PageDown => cam_zoom -= 0.1,
                     KeyCode::Up => {
@@ -168,19 +166,14 @@ fn start_interactive() {
                             cam_z -= 0.1;
                         }
                     }
-                    KeyCode::Down => cam_z -= 0.1,
-                    KeyCode::Left => globe.angle += 1. * globe::PI / 30.,
-                    KeyCode::Right => globe.angle += -1. * globe::PI / 30.,
+                    KeyCode::Left => globe.angle += PI / 30.,
+                    KeyCode::Right => globe.angle -= PI / 30.,
                     KeyCode::Enter => {
                         // focus on point
-                        let coord = (0., 0.);
-                        let (cx, cy) = coord;
+                        let (cx, cy) = (0., 0.);
 
-                        let target_cam_z = cy * 3. - 1.5;
-                        cam_z = target_cam_z;
-
-                        let target_angle = cx * (globe::PI * 2.) + globe::PI;
-                        globe.angle = target_angle;
+                        cam_z = cy * 3. - 1.5;
+                        globe.angle = cx * (PI * 2.) + PI;
                     }
                     _ => (),
                 },
@@ -196,8 +189,8 @@ fn start_interactive() {
                             } else if y_diff < 0. && cam_z > -1.5 {
                                 cam_z -= 0.1;
                             }
-                            globe.angle += x_diff * globe::PI / 30.;
-                            globe.angle += y_diff * globe::PI / 30.;
+                            globe.angle += x_diff * PI / 30.;
+                            globe.angle += y_diff * PI / 30.;
                         }
                         last_drag_pos = Some((x, y))
                     }
@@ -229,34 +222,34 @@ fn start_interactive() {
         globe.render_on(&mut canvas);
 
         // print canvas to terminal
-        let (sizex, sizey) = canvas.get_size();
-        for i in 0..sizey / 8 {
-            stdout.queue(crossterm::terminal::Clear(
-                crossterm::terminal::ClearType::CurrentLine,
-            ));
-            for j in 0..sizex / 4 {
-                stdout.queue(Print(canvas.matrix[i][j]));
+        let (size_x, size_y) = canvas.get_size();
+        for i in 0..size_y / 8 {
+            stdout.queue(terminal::Clear(
+                terminal::ClearType::CurrentLine,
+            )).unwrap();
+            for j in 0..size_x / 4 {
+                stdout.queue(Print(canvas.matrix[i][j])).unwrap();
             }
             // stdout.execute(cursor::MoveToNextLine(1));
-            stdout.queue(cursor::MoveDown(1));
-            stdout.queue(cursor::MoveLeft((sizex / 4) as u16));
+            stdout.queue(cursor::MoveDown(1)).unwrap();
+            stdout.queue(cursor::MoveLeft((size_x / 4) as u16)).unwrap();
             stdout.flush().unwrap();
         }
 
         if term_size.0 / 2 > term_size.1 {
             // center the cursor on the x axis
             stdout.execute(crossterm::cursor::MoveTo(
-                (sizex / 8) as u16 - ((sizex / 8) / 4) as u16,
+                (size_x / 8) as u16 - ((size_x / 8) / 4) as u16,
                 // (term_size.0 / 2) - (term_size.0 / 4) as u16,
                 // term_size.0 / 2,
                 0,
-            ));
+            )).unwrap();
         }
     }
 
-    stdout.execute(cursor::Show);
-    stdout.execute(cursor::EnableBlinking);
-    stdout.execute(crossterm::event::DisableMouseCapture);
+    stdout.execute(cursor::Show).unwrap();
+    stdout.execute(cursor::EnableBlinking).unwrap();
+    stdout.execute(crossterm::event::DisableMouseCapture).unwrap();
 
-    crossterm::terminal::disable_raw_mode().unwrap();
+    terminal::disable_raw_mode().unwrap();
 }
