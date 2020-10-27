@@ -159,7 +159,12 @@ fn start_interactive() {
                 Event::Key(event) => match event.code {
                     KeyCode::Char(c) => break,
                     KeyCode::PageUp => cam_zoom += 0.1,
-                    KeyCode::PageDown => cam_zoom -= 0.1,
+                    KeyCode::PageDown => {
+                        cam_zoom -= 0.1;
+                        if cam_zoom < 1.0 {
+                            cam_zoom = 1.0;
+                        }
+                    },
                     KeyCode::Up => {
                         if cam_z < 1.5 {
                             cam_z += 0.1;
