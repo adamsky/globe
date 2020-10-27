@@ -7,18 +7,22 @@
 use std::fs::File;
 use std::io::{stdout, BufRead, BufReader, Read, Write};
 
-pub type Int = i64;
+pub type Int = i32;
+pub type Float = f32;
 pub type Texture = Vec<Vec<char>>;
 
-pub const PI: f64 = 3.14159265358979323846;
+pub const PI: Float = std::f32::consts::PI;
 
 const palette: [char; 18] = [
     ' ', '.', ':', ';', '\'', ',', 'w', 'i', 'o', 'g', 'O', 'L', 'X', 'H', 'W', 'Y', 'V', '@',
 ];
 
+static EARTH_TEXTURE: &'static str = include_str!("../textures/earth.txt");
+
 pub struct Canvas {
     pub matrix: Vec<Vec<char>>,
     size: (usize, usize),
+    // character size
     char_pix: (usize, usize),
 }
 impl Canvas {
@@ -47,7 +51,6 @@ impl Canvas {
             }
         }
     }
-    // TODO return result?
     fn draw_point(&mut self, a: usize, b: usize, c: char) {
         if a < 0 || b < 0 || a >= self.size.0 || b >= self.size.1 {
             return;
@@ -58,8 +61,8 @@ impl Canvas {
 
 pub struct Globe {
     pub camera: Camera,
-    pub radius: f64,
-    pub angle: f64,
+    pub radius: Float,
+    pub angle: Float,
     pub texture: Texture,
     pub texture_night: Option<Texture>,
 }
@@ -67,7 +70,7 @@ pub struct Globe {
 impl Globe {
     pub fn render_on(&self, mut canvas: &mut Canvas) {
         //Sun
-        let light: [f64; 3] = [0., 999999., 0.];
+        let light: [Float; 3] = [0., 999999., 0.];
         //shoot the ray through every pixel
 
         let (sizex, sizey) = canvas.get_size();
@@ -76,13 +79,13 @@ impl Globe {
             for xi in 0..sizex {
                 let xif = xi as Int;
                 //coordinates of the camera, origin of the ray
-                let o: [f64; 3] = [self.camera.x, self.camera.y, self.camera.z];
+                let o: [Float; 3] = [self.camera.x, self.camera.y, self.camera.z];
                 //u is unit vector, direction of the ray
-                let mut u: [f64; 3] = [
-                    -((xif - (sizex / canvas.char_pix.0 / 2) as Int) as f64 + 0.5)
-                        / (sizex / canvas.char_pix.0 / 2) as f64,
-                    ((yif - (sizey / canvas.char_pix.1 / 2) as Int) as f64 + 0.5)
-                        / (sizey / canvas.char_pix.1 / 2) as f64,
+                let mut u: [Float; 3] = [
+                    -((xif - (sizex / canvas.char_pix.0 / 2) as Int) as Float + 0.5)
+                        / (sizex / canvas.char_pix.0 / 2) as Float,
+                    ((yif - (sizey / canvas.char_pix.1 / 2) as Int) as Float + 0.5)
+                        / (sizey / canvas.char_pix.1 / 2) as Float,
                     -1.,
                 ];
                 transformVector(&mut u, self.camera.matrix);
@@ -90,7 +93,7 @@ impl Globe {
                 u[1] -= self.camera.y;
                 u[2] -= self.camera.z;
                 normalize(&mut u);
-                let discriminant: f64 =
+                let discriminant: Float =
                     dot(&u, &o) * dot(&u, &o) - dot(&o, &o) + self.radius * self.radius;
 
                 //ray doesn't hit the sphere
@@ -98,33 +101,33 @@ impl Globe {
                     continue;
                 }
 
-                let distance: f64 = -discriminant.sqrt() - dot(&u, &o);
+                let distance: Float = -discriminant.sqrt() - dot(&u, &o);
 
                 //intersection point
-                let inter: [f64; 3] = [
+                let inter: [Float; 3] = [
                     o[0] + distance * u[0],
                     o[1] + distance * u[1],
                     o[2] + distance * u[2],
                 ];
 
                 //surface normal
-                let mut n: [f64; 3] = [
+                let mut n: [Float; 3] = [
                     o[0] + distance * u[0],
                     o[1] + distance * u[1],
                     o[2] + distance * u[2],
                 ];
                 normalize(&mut n);
                 //unit vector pointing from intersection to light source
-                let mut l: [f64; 3] = [0.; 3];
+                let mut l: [Float; 3] = [0.; 3];
                 vector(&mut l, &inter, &light);
                 normalize(&mut l);
-                let luminance: f64 = clamp(5. * (dot(&n, &l)) + 0.5, 0., 1.);
-                let mut temp: [f64; 3] = [inter[0], inter[1], inter[2]];
+                let luminance: Float = clamp(5. * (dot(&n, &l)) + 0.5, 0., 1.);
+                let mut temp: [Float; 3] = [inter[0], inter[1], inter[2]];
                 rotateX(&mut temp, -PI * 2. * 0. / 360.);
                 //computing coordinates for the sphere
-                let phi: f64 = -temp[2] / self.radius / 2. + 0.5;
-                //let t: f64 = (temp[1]/temp[0];
-                let mut theta: f64 = (temp[1] / temp[0]).atan() / PI + 0.5 + self.angle / 2. / PI;
+                let phi: Float = -temp[2] / self.radius / 2. + 0.5;
+                //let t: Float = (temp[1]/temp[0];
+                let mut theta: Float = (temp[1] / temp[0]).atan() / PI + 0.5 + self.angle / 2. / PI;
                 theta -= theta.floor();
                 let earthX: usize = (theta * 202.) as usize;
                 let earthY: usize = (phi * 80.) as usize;
@@ -132,9 +135,9 @@ impl Globe {
 
                 // TODO night
                 //let night = findIndex(self.texture_night[earthY][earthX], &palette);
-                //let index = ((1.0 - luminance) * night as f64 + luminance * day as f64) as usize;
+                //let index = ((1.0 - luminance) * night as Float + luminance * day as Float) as usize;
 
-                let index = ((1.0 - luminance) * day as f64 + luminance * day as f64) as usize;
+                let index = ((1.0 - luminance) * day as Float + luminance * day as Float) as usize;
                 canvas.draw_point(xi, yi, palette[index]);
             }
         }
@@ -144,8 +147,8 @@ impl Globe {
 #[derive(Default)]
 pub struct GlobeConfig {
     camera_cfg: Option<CameraConfig>,
-    radius: Option<f64>,
-    angle: Option<f64>,
+    radius: Option<Float>,
+    angle: Option<Float>,
     template: Option<GlobeTemplate>,
     texture: Option<Texture>,
     texture_night: Option<Texture>,
@@ -158,7 +161,7 @@ impl GlobeConfig {
     pub fn with_camera(mut self, config: CameraConfig) -> Self {
         self
     }
-    pub fn with_radius(mut self, r: f64) -> Self {
+    pub fn with_radius(mut self, r: Float) -> Self {
         self.radius = Some(r);
         self
     }
@@ -166,31 +169,33 @@ impl GlobeConfig {
         self.template = Some(t);
         self
     }
-    pub fn load_texture_str(mut self, texture: &str) -> Self {
+    pub fn with_texture(mut self, texture: &str) -> Self {
         let mut tex = Texture::new();
-        // let lines = BufReader::new(texture.to_string()).lines();
-        let lines= texture.lines();
+        let lines = texture.lines();
         for (i, line) in lines.enumerate() {
-            // if let Ok(l) = line {
-                let mut row = Vec::new();
-                //if l.len() != 202 {
-                //panic!("wrong line len");
-                //}
-                for (j, c) in line.chars().rev().enumerate() {
-                    //print!("{}", c);
-                    row.push(c);
-                    //earth[i][j] = c;
-                }
-                tex.push(row);
-            // }
+            let mut row = Vec::new();
+            for (j, c) in line.chars().rev().enumerate() {
+                row.push(c);
+            }
+            tex.push(row);
         }
         self.texture = Some(tex);
         self
     }
+    pub fn with_texture_at(mut self, path: &str) -> Self {
+        let mut file = File::open(path).unwrap();
+        let mut out_string = String::new();
+        file.read_to_string(&mut out_string);
+        self.with_texture(&out_string)
+    }
     pub fn build(mut self) -> Globe {
-        let camera = self.camera_cfg.unwrap_or(CameraConfig::default()).build();
-        // TODO
+        if let Some(template) = &self.template {
+            match template {
+                GlobeTemplate::Earth => self = self.with_texture(EARTH_TEXTURE),
+            }
+        }
         let texture = self.texture.expect("texture not provided");
+        let camera = self.camera_cfg.unwrap_or(CameraConfig::default()).build();
         Globe {
             camera,
             radius: self.radius.unwrap_or(1.),
@@ -206,12 +211,12 @@ pub enum GlobeTemplate {
 }
 
 pub struct CameraConfig {
-    radius: f64,
-    alpha: f64,
-    beta: f64,
+    radius: Float,
+    alpha: Float,
+    beta: Float,
 }
 impl CameraConfig {
-    pub fn new(radius: f64, alpha: f64, beta: f64) -> Self {
+    pub fn new(radius: Float, alpha: Float, beta: Float) -> Self {
         Self {
             radius,
             alpha,
@@ -220,7 +225,7 @@ impl CameraConfig {
     }
     pub fn default() -> Self {
         Self {
-            radius: 1.,
+            radius: 2.,
             alpha: 0.,
             beta: 0.,
         }
@@ -240,18 +245,18 @@ fn findIndex(c: char, s: &[char]) -> Int {
 }
 
 pub struct Camera {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-    matrix: [f64; 16],
-    inv: [f64; 16],
+    pub x: Float,
+    pub y: Float,
+    pub z: Float,
+    matrix: [Float; 16],
+    inv: [Float; 16],
 }
 
 impl Camera {
     // alfa is camera's angle along the xy plane.
     // beta is camera's angle along z axis
     // r is the distance from the camera to the origin
-    pub fn new(r: f64, alfa: f64, beta: f64) -> Self {
+    pub fn new(r: Float, alfa: Float, beta: Float) -> Self {
         let a = alfa.sin();
         let b = alfa.cos();
         let c = beta.sin();
@@ -300,16 +305,16 @@ impl Camera {
     }
 }
 
-fn transformVector(mut vec: &mut [f64; 3], m: [f64; 16]) {
-    let tx: f64 = vec[0] * m[0] + vec[1] * m[4] + vec[2] * m[8] + m[12];
-    let ty: f64 = vec[0] * m[1] + vec[1] * m[5] + vec[2] * m[9] + m[13];
-    let tz: f64 = vec[0] * m[2] + vec[1] * m[6] + vec[2] * m[10] + m[14];
+fn transformVector(mut vec: &mut [Float; 3], m: [Float; 16]) {
+    let tx: Float = vec[0] * m[0] + vec[1] * m[4] + vec[2] * m[8] + m[12];
+    let ty: Float = vec[0] * m[1] + vec[1] * m[5] + vec[2] * m[9] + m[13];
+    let tz: Float = vec[0] * m[2] + vec[1] * m[6] + vec[2] * m[10] + m[14];
     vec[0] = tx;
     vec[1] = ty;
     vec[2] = tz;
 }
 
-fn invert(mut inv: &mut [f64; 16], matrix: [f64; 16]) {
+fn invert(mut inv: &mut [Float; 16], matrix: [Float; 16]) {
     inv[0] = matrix[5] * matrix[10] * matrix[15]
         - matrix[5] * matrix[11] * matrix[14]
         - matrix[9] * matrix[6] * matrix[15]
@@ -422,7 +427,7 @@ fn invert(mut inv: &mut [f64; 16], matrix: [f64; 16]) {
         + matrix[8] * matrix[1] * matrix[6]
         - matrix[8] * matrix[2] * matrix[5];
 
-    let mut det: f64 =
+    let mut det: Float =
         matrix[0] * inv[0] + matrix[1] * inv[4] + matrix[2] * inv[8] + matrix[3] * inv[12];
 
     det = 1.0 / det;
@@ -432,35 +437,35 @@ fn invert(mut inv: &mut [f64; 16], matrix: [f64; 16]) {
     }
 }
 
-fn cross(mut r: &mut [f64; 3], a: [f64; 3], b: [f64; 3]) {
+fn cross(mut r: &mut [Float; 3], a: [Float; 3], b: [Float; 3]) {
     r[0] = a[1] * b[2] - a[2] * b[1];
     r[1] = a[2] * b[0] - a[0] * b[2];
     r[2] = a[0] * b[1] - a[1] * b[0];
 }
 
-fn magnitute(r: &[f64; 3]) -> f64 {
-    let s: f64 = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
+fn magnitute(r: &[Float; 3]) -> Float {
+    let s: Float = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
     s.sqrt()
 }
 
-fn normalize(mut r: &mut [f64; 3]) {
-    let len: f64 = magnitute(r);
+fn normalize(mut r: &mut [Float; 3]) {
+    let len: Float = magnitute(r);
     r[0] /= len;
     r[1] /= len;
     r[2] /= len;
 }
 
-fn dot(a: &[f64; 3], b: &[f64; 3]) -> f64 {
+fn dot(a: &[Float; 3], b: &[Float; 3]) -> Float {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
-fn vector(mut a: &mut [f64; 3], b: &[f64; 3], c: &[f64; 3]) {
+fn vector(mut a: &mut [Float; 3], b: &[Float; 3], c: &[Float; 3]) {
     a[0] = b[0] - c[0];
     a[1] = b[1] - c[1];
     a[2] = b[2] - c[2];
 }
 
-fn transformVector2(mut vec: &mut [f64; 3], m: &[f64; 9]) {
+fn transformVector2(mut vec: &mut [Float; 3], m: &[Float; 9]) {
     let x = m[0] * vec[0] + m[1] * vec[1] + m[2] * vec[2];
     let y = m[3] * vec[0] + m[4] * vec[1] + m[5] * vec[2];
     let z = m[6] * vec[0] + m[7] * vec[1] + m[8] * vec[2];
@@ -469,26 +474,26 @@ fn transformVector2(mut vec: &mut [f64; 3], m: &[f64; 9]) {
     vec[2] = z;
 }
 
-fn rotateX(mut vec: &mut [f64; 3], theta: f64) {
+fn rotateX(mut vec: &mut [Float; 3], theta: Float) {
     let a = theta.sin();
     let b = theta.cos();
-    let m: [f64; 9] = [1., 0., 0., 0., b, -a, 0., a, b];
+    let m: [Float; 9] = [1., 0., 0., 0., b, -a, 0., a, b];
     transformVector2(vec, &m);
 }
-fn rotateY(mut vec: &mut [f64; 3], theta: f64) {
+fn rotateY(mut vec: &mut [Float; 3], theta: Float) {
     let a = theta.sin();
     let b = theta.cos();
-    let m: [f64; 9] = [b, 0., a, 0., 1., 0., -a, 0., b];
+    let m: [Float; 9] = [b, 0., a, 0., 1., 0., -a, 0., b];
     transformVector2(vec, &m);
 }
-fn rotateZ(mut vec: &mut [f64; 3], theta: f64) {
+fn rotateZ(mut vec: &mut [Float; 3], theta: Float) {
     let a = theta.sin();
     let b = theta.cos();
-    let m: [f64; 9] = [b, -a, 0., a, b, 0., 0., 0., 1.];
+    let m: [Float; 9] = [b, -a, 0., a, b, 0., 0., 0., 1.];
     transformVector2(vec, &m);
 }
 
-fn clamp(mut x: f64, min: f64, max: f64) -> f64 {
+fn clamp(mut x: Float, min: Float, max: Float) -> Float {
     if x < min {
         x = min;
     } else if x > max {

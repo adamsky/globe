@@ -13,6 +13,9 @@ use std::io::{stdout, BufRead, BufReader, Read, Write};
 use std::path::Path;
 use std::time::Duration;
 
+use clap::{App, AppSettings, Arg};
+use crossterm::event::MouseEvent;
+use crossterm::terminal::enable_raw_mode;
 use crossterm::{
     cursor,
     event::{poll, read, Event, KeyCode, KeyEvent},
@@ -20,15 +23,10 @@ use crossterm::{
     style::Print,
     ExecutableCommand, QueueableCommand,
 };
-use crossterm::event::MouseEvent;
-use crossterm::terminal::enable_raw_mode;
-use globe::{Camera, Canvas, Globe, GlobeConfig, PI};
-use clap::{App, AppSettings, Arg};
+use globe::{Camera, Canvas, Globe, GlobeConfig, GlobeTemplate, PI};
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 pub const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
-
-static EARTH_TEXTURE: &'static str = include_str!("../ascii/earth.txt");
 
 fn main() {
     let mut app = App::new("globe-cli")
@@ -55,7 +53,7 @@ fn start_screensaver() {
     stdout.execute(crossterm::event::DisableMouseCapture);
 
     let mut globe = GlobeConfig::new()
-        .load_texture_str(EARTH_TEXTURE)
+        .use_template(GlobeTemplate::Earth)
         .build();
     let mut term_size = crossterm::terminal::size().unwrap();
     let mut canvas = if term_size.0 > term_size.1 {
@@ -132,7 +130,7 @@ fn start_interactive() {
     stdout.execute(crossterm::event::EnableMouseCapture);
 
     let mut globe = GlobeConfig::new()
-        .load_texture_str(EARTH_TEXTURE)
+        .use_template(GlobeTemplate::Earth)
         .build();
     let mut term_size = crossterm::terminal::size().unwrap();
     let mut canvas = if term_size.0 > term_size.1 {
@@ -186,8 +184,8 @@ fn start_interactive() {
                     MouseEvent::Drag(_, x, y, _) => {
                         if let Some(last) = last_drag_pos {
                             let (x_last, y_last) = last;
-                            let x_diff = x as f64 - x_last as f64;
-                            let y_diff = y as f64 - y_last as f64;
+                            let x_diff = x as globe::Float - x_last as globe::Float;
+                            let y_diff = y as globe::Float - y_last as globe::Float;
 
                             if y_diff > 0. && cam_z < 1.5 {
                                 cam_z += 0.1;
