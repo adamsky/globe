@@ -216,6 +216,11 @@ fn start_interactive() {
             }
         }
 
+        // clip camera zoom
+        if cam_zoom < 1.0 {
+            cam_zoom = 1.0;
+        }
+
         globe.camera = Camera::new(cam_zoom, cam_xy, cam_z);
 
         canvas.clear();
