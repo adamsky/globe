@@ -52,12 +52,11 @@ fn start_screensaver() {
     let mut stdout = stdout();
     stdout.execute(cursor::Hide);
     stdout.execute(cursor::DisableBlinking);
-    stdout.execute(crossterm::event::EnableMouseCapture);
+    stdout.execute(crossterm::event::DisableMouseCapture);
 
     let mut globe = GlobeConfig::new()
         .load_texture_str(EARTH_TEXTURE)
         .build();
-    // let mut canvas = Canvas::new(450, 450, None);
     let mut term_size = crossterm::terminal::size().unwrap();
     let mut canvas = if term_size.0 > term_size.1 {
         Canvas::new(term_size.1 * 8, term_size.1 * 8, None)
@@ -75,6 +74,7 @@ fn start_screensaver() {
         if poll(Duration::from_millis(100)).unwrap() {
             match read().unwrap() {
                 Event::Key(event) => match event.code {
+                    // pressing any char key exists the program
                     KeyCode::Char(c) => return,
                     _ => (),
                 },
@@ -90,10 +90,10 @@ fn start_screensaver() {
             }
         }
 
+        // make the globe spin
         globe.angle += -1. * globe::PI / 50.;
 
         globe.camera = Camera::new(cam_zoom, cam_xy, cam_z);
-
         canvas.clear();
 
         // render globe on the canvas
@@ -108,7 +108,6 @@ fn start_screensaver() {
             for j in 0..sizex / 4 {
                 stdout.queue(Print(canvas.matrix[i][j]));
             }
-            // stdout.execute(cursor::MoveToNextLine(1));
             stdout.queue(cursor::MoveDown(1));
             stdout.queue(cursor::MoveLeft((sizex / 4) as u16));
             stdout.flush().unwrap();
@@ -118,17 +117,9 @@ fn start_screensaver() {
             // center the cursor on the x axis
             stdout.execute(crossterm::cursor::MoveTo(
                 (sizex / 8) as u16 - ((sizex / 8) / 4) as u16,
-                // (term_size.0 / 2) - (term_size.0 / 4) as u16,
-                // term_size.0 / 2,
                 0,
             ));
         }
-
-        //update camera position
-        // std::thread::sleep(std::time::Duration::from_millis(10));
-        // globe.angle += 1. * globe::PI / 10.;
-        // angle_offset += 0. * PI / 10.;
-
     }
 }
 
@@ -143,15 +134,12 @@ fn start_interactive() {
     let mut globe = GlobeConfig::new()
         .load_texture_str(EARTH_TEXTURE)
         .build();
-    // let mut canvas = Canvas::new(450, 450, None);
     let mut term_size = crossterm::terminal::size().unwrap();
     let mut canvas = if term_size.0 > term_size.1 {
         Canvas::new(term_size.1 * 8, term_size.1 * 8, None)
     } else {
         Canvas::new(term_size.0 * 4, term_size.0 * 4, None)
     };
-
-    // stdout.execute(crossterm::cursor::MoveTo(100, 0));
 
     let mut angle_offset = 0.;
     let mut cam_zoom = 2.;
@@ -183,8 +171,6 @@ fn start_interactive() {
                     KeyCode::Right => globe.angle += -1. * globe::PI / 30.,
                     KeyCode::Enter => {
                         // focus on point
-                        //let coord = (0.6, 0.7);
-                        //let coord = (0.5, 0.5);
                         let coord = (0., 0.);
                         let (cx, cy) = coord;
 
@@ -225,7 +211,6 @@ fn start_interactive() {
                         Canvas::new(width * 4, width * 4, None)
                     };
                 }
-                _ => (),
             }
         }
 
@@ -260,10 +245,5 @@ fn start_interactive() {
                 0,
             ));
         }
-
-        //update camera position
-        // std::thread::sleep(std::time::Duration::from_millis(10));
-        // globe.angle += 1. * globe::PI / 10.;
-        // angle_offset += 0. * PI / 10.;
     }
 }
