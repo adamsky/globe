@@ -28,6 +28,8 @@ use clap::{App, AppSettings, Arg};
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 pub const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
 
+static EARTH_TEXTURE: &'static str = include_str!("../ascii/earth.txt");
+
 fn main() {
     let mut app = App::new("globe-cli")
         .version(VERSION)
@@ -52,12 +54,8 @@ fn start_screensaver() {
     stdout.execute(cursor::DisableBlinking);
     stdout.execute(crossterm::event::EnableMouseCapture);
 
-    let mut earth_texture_path = std::env::current_dir().unwrap();
-    earth_texture_path.push("globe-cli/ascii/earth.txt");
-    println!("{:?}", earth_texture_path);
-
     let mut globe = GlobeConfig::new()
-        .load_texture_from(earth_texture_path.to_str().unwrap())
+        .load_texture_str(EARTH_TEXTURE)
         .build();
     // let mut canvas = Canvas::new(450, 450, None);
     let mut term_size = crossterm::terminal::size().unwrap();
@@ -142,12 +140,8 @@ fn start_interactive() {
     stdout.execute(cursor::DisableBlinking);
     stdout.execute(crossterm::event::EnableMouseCapture);
 
-    let mut earth_texture_path = std::env::current_dir().unwrap();
-    earth_texture_path.push("globe-cli/ascii/earth.txt");
-    println!("{:?}", earth_texture_path);
-
     let mut globe = GlobeConfig::new()
-        .load_texture_from(earth_texture_path.to_str().unwrap())
+        .load_texture_str(EARTH_TEXTURE)
         .build();
     // let mut canvas = Canvas::new(450, 450, None);
     let mut term_size = crossterm::terminal::size().unwrap();

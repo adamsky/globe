@@ -166,23 +166,23 @@ impl GlobeConfig {
         self.template = Some(t);
         self
     }
-    pub fn load_texture_from(mut self, path: &str) -> Self {
+    pub fn load_texture_str(mut self, texture: &str) -> Self {
         let mut tex = Texture::new();
-        let file = File::open(path).unwrap();
-        let lines = BufReader::new(file).lines();
+        // let lines = BufReader::new(texture.to_string()).lines();
+        let lines= texture.lines();
         for (i, line) in lines.enumerate() {
-            if let Ok(l) = line {
+            // if let Ok(l) = line {
                 let mut row = Vec::new();
                 //if l.len() != 202 {
                 //panic!("wrong line len");
                 //}
-                for (j, c) in l.chars().rev().enumerate() {
+                for (j, c) in line.chars().rev().enumerate() {
                     //print!("{}", c);
                     row.push(c);
                     //earth[i][j] = c;
                 }
                 tex.push(row);
-            }
+            // }
         }
         self.texture = Some(tex);
         self
