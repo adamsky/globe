@@ -159,12 +159,7 @@ fn start_interactive() {
                 Event::Key(event) => match event.code {
                     KeyCode::Char(c) => break,
                     KeyCode::PageUp => cam_zoom += 0.1,
-                    KeyCode::PageDown => {
-                        cam_zoom -= 0.1;
-                        if cam_zoom < 1.0 {
-                            cam_zoom = 1.0;
-                        }
-                    },
+                    KeyCode::PageDown => cam_zoom -= 0.1,
                     KeyCode::Up => {
                         if cam_z < 1.5 {
                             cam_z += 0.1;
@@ -221,6 +216,11 @@ fn start_interactive() {
                     };
                 }
             }
+        }
+
+        // clip camera zoom
+        if cam_zoom < 1.0 {
+            cam_zoom = 1.0;
         }
 
         globe.camera = Camera::new(cam_zoom, cam_xy, cam_z);
