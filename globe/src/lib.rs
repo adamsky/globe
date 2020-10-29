@@ -2,7 +2,6 @@
 //!
 //! Based on [C++ code by DinoZ1729](https://github.com/DinoZ1729/Earth).
 
-#![warn(clippy::all)]
 #![allow(dead_code)]
 
 use std::f32::consts::PI;

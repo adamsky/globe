@@ -7,8 +7,6 @@
 //!
 //! **Keyboard**: use arrow keys to rotate, *PgUp* and *PgDown* to zoom.
 
-#![warn(clippy::all)]
-
 use std::f32::consts::PI;
 use std::io::{stdout, Write};
 use std::time::Duration;
@@ -82,12 +80,12 @@ fn start_screensaver() {
                         Canvas::new(width * 4, width * 4, None)
                     };
                 }
-                _ => (),
+                Event::Mouse(_) => {}
             }
         }
 
         // make the globe spin
-        globe.angle += -1. * PI / 50.;
+        globe.angle -= PI / 50.;
 
         globe.camera = Camera::new(cam_zoom, cam_xy, cam_z);
         canvas.clear();
