@@ -13,8 +13,8 @@ pub type Texture = Vec<Vec<char>>;
 
 pub const PI: Float = std::f32::consts::PI;
 
-const palette: [char; 18] = [
-    ' ', '.', ':', ';', '\'', ',', 'w', 'i', 'o', 'g', 'O', 'L', 'X', 'H', 'W', 'Y', 'V', '@',
+const palette: [char; 15] = [
+    ' ', '`', '.', '-', ':', '/', '+', 'o', 's', 'y', 'h', 'd', 'm', 'N', 'M',
 ];
 
 static EARTH_TEXTURE: &'static str = include_str!("../textures/earth.txt");
@@ -74,6 +74,9 @@ impl Globe {
         //shoot the ray through every pixel
 
         let (sizex, sizey) = canvas.get_size();
+        let textureWidth = (self.texture[0].len() - 1) as f32;
+        let textureHeight = (self.texture.len() - 1) as f32;
+        
         for yi in 0..sizey {
             let yif = yi as Int;
             for xi in 0..sizex {
@@ -129,8 +132,8 @@ impl Globe {
                 //let t: Float = (temp[1]/temp[0];
                 let mut theta: Float = (temp[1] / temp[0]).atan() / PI + 0.5 + self.angle / 2. / PI;
                 theta -= theta.floor();
-                let earthX: usize = (theta * 202.) as usize;
-                let earthY: usize = (phi * 80.) as usize;
+                let earthX: usize = (theta * textureWidth) as usize;
+                let earthY: usize = (phi * textureHeight) as usize;
                 let day = findIndex(self.texture[earthY][earthX], &palette);
 
                 // TODO night
