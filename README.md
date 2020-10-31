@@ -37,7 +37,7 @@ globe -i
 To use `globe` within your Rust project, add it to your dependencies:
 ```
 [dependencies]
-globe = "0.1.1"
+globe = "0.1.2"
 ```
 
 First create a `Globe`:

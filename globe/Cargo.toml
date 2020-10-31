@@ -1,6 +1,6 @@
 [package]
 name = "globe"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["adamsky <adamsky@enum.space>"]
 edition = "2018"
 repository = "https://github.com/adamsky/globe"
