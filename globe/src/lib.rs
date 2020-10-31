@@ -89,8 +89,7 @@ impl Globe {
                 u[2] -= self.camera.z;
                 normalize(&mut u);
                 let dot_uo = dot(&u, &o);
-                let discriminant: Float =
-                    dot_uo * dot_uo - dot(&o, &o) + self.radius * self.radius;
+                let discriminant: Float = dot_uo * dot_uo - dot(&o, &o) + self.radius * self.radius;
 
                 // ray doesn't hit the sphere
                 if discriminant < 0. {
@@ -133,7 +132,12 @@ impl Globe {
                 //let night = findIndex(self.texture_night[earthY][earthX], &palette);
                 //let index = ((1.0 - luminance) * night as Float + luminance * day as Float) as usize;
 
-                let index = ((1.0 - luminance) * day as Float + luminance * day as Float) as usize;
+                let mut index =
+                    ((1.0 - luminance) * day as Float + luminance * day as Float) as usize;
+                if index >= PALETTE.len() {
+                    index = 0;
+                }
+
                 canvas.draw_point(xi, yi, PALETTE[index]);
             }
         }
@@ -189,7 +193,10 @@ impl GlobeConfig {
             }
         }
         let texture = self.texture.expect("texture not provided");
-        let camera = self.camera_cfg.unwrap_or_else(CameraConfig::default).build();
+        let camera = self
+            .camera_cfg
+            .unwrap_or_else(CameraConfig::default)
+            .build();
         Globe {
             camera,
             radius: self.radius.unwrap_or(1.),
