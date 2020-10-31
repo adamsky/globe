@@ -12,14 +12,15 @@ use std::io::{stdout, Write};
 use std::time::Duration;
 
 use clap::{App, AppSettings, Arg};
-use crossterm::{event::MouseEvent, terminal};
 use crossterm::{
     cursor,
     event::{poll, read, Event, KeyCode},
     style::Print,
     ExecutableCommand, QueueableCommand,
 };
+use crossterm::{event::MouseEvent, terminal};
 
+use crossterm::terminal::ClearType;
 use globe::{Camera, Canvas, GlobeConfig, GlobeTemplate};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -69,7 +70,7 @@ fn start_screensaver() {
                 Event::Key(event) => {
                     // pressing any char key exists the program
                     if let KeyCode::Char(_) = event.code {
-                        break
+                        break;
                     }
                 }
                 Event::Resize(width, height) => {
@@ -96,9 +97,9 @@ fn start_screensaver() {
         // print canvas to terminal
         let (size_x, size_y) = canvas.get_size();
         for i in 0..size_y / 8 {
-            stdout.queue(terminal::Clear(
-                terminal::ClearType::CurrentLine,
-            )).unwrap();
+            stdout
+                .queue(terminal::Clear(terminal::ClearType::CurrentLine))
+                .unwrap();
             for j in 0..size_x / 4 {
                 stdout.queue(Print(canvas.matrix[i][j])).unwrap();
             }
@@ -109,15 +110,18 @@ fn start_screensaver() {
 
         if term_size.0 / 2 > term_size.1 {
             // center the cursor on the x axis
-            stdout.execute(crossterm::cursor::MoveTo(
-                (size_x / 8) as u16 - ((size_x / 8) / 4) as u16,
-                0,
-            )).unwrap();
+            stdout
+                .execute(crossterm::cursor::MoveTo(
+                    (size_x / 8) as u16 - ((size_x / 8) / 4) as u16,
+                    0,
+                ))
+                .unwrap();
         }
     }
 
     stdout.execute(cursor::Show).unwrap();
     stdout.execute(cursor::EnableBlinking).unwrap();
+    stdout.execute(terminal::Clear(ClearType::All)).unwrap();
 
     terminal::disable_raw_mode().unwrap();
 }
@@ -128,7 +132,9 @@ fn start_interactive() {
     let mut stdout = stdout();
     stdout.execute(cursor::Hide).unwrap();
     stdout.execute(cursor::DisableBlinking).unwrap();
-    stdout.execute(crossterm::event::EnableMouseCapture).unwrap();
+    stdout
+        .execute(crossterm::event::EnableMouseCapture)
+        .unwrap();
 
     let mut globe = GlobeConfig::new()
         .use_template(GlobeTemplate::Earth)
@@ -222,9 +228,9 @@ fn start_interactive() {
         // print canvas to terminal
         let (size_x, size_y) = canvas.get_size();
         for i in 0..size_y / 8 {
-            stdout.queue(terminal::Clear(
-                terminal::ClearType::CurrentLine,
-            )).unwrap();
+            stdout
+                .queue(terminal::Clear(terminal::ClearType::CurrentLine))
+                .unwrap();
             for j in 0..size_x / 4 {
                 stdout.queue(Print(canvas.matrix[i][j])).unwrap();
             }
@@ -236,18 +242,23 @@ fn start_interactive() {
 
         if term_size.0 / 2 > term_size.1 {
             // center the cursor on the x axis
-            stdout.execute(crossterm::cursor::MoveTo(
-                (size_x / 8) as u16 - ((size_x / 8) / 4) as u16,
-                // (term_size.0 / 2) - (term_size.0 / 4) as u16,
-                // term_size.0 / 2,
-                0,
-            )).unwrap();
+            stdout
+                .execute(crossterm::cursor::MoveTo(
+                    (size_x / 8) as u16 - ((size_x / 8) / 4) as u16,
+                    // (term_size.0 / 2) - (term_size.0 / 4) as u16,
+                    // term_size.0 / 2,
+                    0,
+                ))
+                .unwrap();
         }
     }
 
     stdout.execute(cursor::Show).unwrap();
     stdout.execute(cursor::EnableBlinking).unwrap();
-    stdout.execute(crossterm::event::DisableMouseCapture).unwrap();
+    stdout
+        .execute(crossterm::event::DisableMouseCapture)
+        .unwrap();
+    stdout.execute(terminal::Clear(ClearType::All)).unwrap();
 
     terminal::disable_raw_mode().unwrap();
 }
