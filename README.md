@@ -59,6 +59,14 @@ cd globe-cli
 makepkg -si
 ```
 
+### Docker
+
+You can also use Docker to try out `globe`, no Rust needed. After cloning the repo, just build and run an image from the `Dockerfile` contained at the root of the project:
+```bash
+docker build -t globe .
+docker run -it --rm globe -s
+```
+
 ## Run
 
 To get a full listing of available features and options, show the `--help`
