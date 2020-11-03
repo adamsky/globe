@@ -8,21 +8,42 @@ use std::f32::consts::PI;
 use std::fs::File;
 use std::io::Read;
 
-pub type Int = i32;
+pub type Int = isize;
 pub type Float = f32;
-pub type Texture = Vec<Vec<char>>;
-
-const PALETTE: [char; 18] = [
-    ' ', '.', ':', ';', '\'', ',', 'w', 'i', 'o', 'g', 'O', 'L', 'X', 'H', 'W', 'Y', 'V', '@',
-];
 
 static EARTH_TEXTURE: &str = include_str!("../textures/earth.txt");
+static EARTH_NIGHT_TEXTURE: &str = include_str!("../textures/earth_night.txt");
 
+/// Globe texture.
+pub struct Texture {
+    day: Vec<Vec<char>>,
+    night: Option<Vec<Vec<char>>>,
+    palette: Option<Vec<char>>,
+}
+
+impl Texture {
+    pub fn new(
+        day: Vec<Vec<char>>,
+        night: Option<Vec<Vec<char>>>,
+        palette: Option<Vec<char>>,
+    ) -> Self {
+        Texture {
+            day,
+            night,
+            palette,
+        }
+    }
+    pub fn get_size(&self) -> (usize, usize) {
+        (self.day[0].len() - 1, self.day.len() - 1)
+    }
+}
+
+/// Canvas that will be used to render the globe onto.
 pub struct Canvas {
     pub matrix: Vec<Vec<char>>,
     size: (usize, usize),
     // character size
-    char_pix: (usize, usize),
+    pub char_pix: (usize, usize),
 }
 
 impl Canvas {
@@ -54,20 +75,20 @@ impl Canvas {
     }
 }
 
+/// Main globe abstraction.
 pub struct Globe {
     pub camera: Camera,
     pub radius: Float,
     pub angle: Float,
     pub texture: Texture,
-    pub texture_night: Option<Texture>,
+    pub display_night: bool,
 }
 
 impl Globe {
     pub fn render_on(&self, canvas: &mut Canvas) {
-        // Sun
+        // let there be light
         let light: [Float; 3] = [0., 999999., 0.];
         // shoot the ray through every pixel
-
         let (size_x, size_y) = canvas.get_size();
         for yi in 0..size_y {
             let yif = yi as Int;
@@ -112,6 +133,7 @@ impl Globe {
                     o[2] + distance * u[2],
                 ];
                 normalize(&mut n);
+
                 // unit vector pointing from intersection to light source
                 let mut l: [Float; 3] = [0.; 3];
                 vector(&mut l, &inter, &light);
@@ -119,31 +141,45 @@ impl Globe {
                 let luminance: Float = clamp(5. * (dot(&n, &l)) + 0.5, 0., 1.);
                 let mut temp: [Float; 3] = [inter[0], inter[1], inter[2]];
                 rotate_x(&mut temp, -PI * 2. * 0. / 360.);
+
                 // computing coordinates for the sphere
                 let phi: Float = -temp[2] / self.radius / 2. + 0.5;
-                //let t: Float = (temp[1]/temp[0];
                 let mut theta: Float = (temp[1] / temp[0]).atan() / PI + 0.5 + self.angle / 2. / PI;
+                // let mut theta: Float = (temp[1] / temp[0]).atan() / PI + self.angle / 2. / PI * 20.;
                 theta -= theta.floor();
-                let earth_x: usize = (theta * 202.) as usize;
-                let earth_y: usize = (phi * 80.) as usize;
-                let day = find_index(self.texture[earth_y][earth_x], &PALETTE);
+                let (tex_x, tex_y) = self.texture.get_size();
+                let earth_x = (theta * tex_x as Float) as usize;
+                let earth_y = (phi * tex_y as Float) as usize;
 
-                // TODO night
-                //let night = findIndex(self.texture_night[earthY][earthX], &palette);
-                //let index = ((1.0 - luminance) * night as Float + luminance * day as Float) as usize;
+                // if night texture and palette are available, draw the night side
+                if self.display_night
+                    && self.texture.night.is_some()
+                    && self.texture.palette.is_some()
+                {
+                    let palette = self.texture.palette.as_ref().unwrap();
+                    let day = find_index(self.texture.day[earth_y][earth_x], palette);
+                    let night = find_index(
+                        self.texture.night.as_ref().unwrap()[earth_y][earth_x],
+                        palette,
+                    );
 
-                let mut index =
-                    ((1.0 - luminance) * day as Float + luminance * day as Float) as usize;
-                if index >= PALETTE.len() {
-                    index = 0;
+                    let mut index =
+                        ((1.0 - luminance) * night as Float + luminance * day as Float) as usize;
+                    if index >= palette.len() {
+                        index = 0;
+                    }
+                    canvas.draw_point(xi, yi, palette[index]);
                 }
-
-                canvas.draw_point(xi, yi, PALETTE[index]);
+                // else just draw the day texture without considering luminance
+                else {
+                    canvas.draw_point(xi, yi, self.texture.day[earth_y][earth_x]);
+                }
             }
         }
     }
 }
 
+/// Globe configuration struct implementing the builder pattern.
 #[derive(Default)]
 pub struct GlobeConfig {
     camera_cfg: Option<CameraConfig>,
@@ -151,45 +187,94 @@ pub struct GlobeConfig {
     angle: Option<Float>,
     template: Option<GlobeTemplate>,
     texture: Option<Texture>,
-    texture_night: Option<Texture>,
+    display_night: bool,
 }
 
 impl GlobeConfig {
+    /// Creates an empty `GlobeConfig`.
     pub fn new() -> Self {
         Self::default()
     }
+
+    /// Sets `CameraConfig` to be used by the builder.
     pub fn with_camera(mut self, config: CameraConfig) -> Self {
         self.camera_cfg = Some(config);
         self
     }
+
+    /// Sets the globe radius.
     pub fn with_radius(mut self, r: Float) -> Self {
         self.radius = Some(r);
         self
     }
+
+    /// Selects a template to be used by the builder.
     pub fn use_template(mut self, t: GlobeTemplate) -> Self {
         self.template = Some(t);
         self
     }
-    pub fn with_texture(mut self, texture: &str) -> Self {
-        let mut tex = Texture::new();
+
+    /// Sets the day texture to be displayed on the globe.
+    pub fn with_texture(mut self, texture: &str, palette: Option<Vec<char>>) -> Self {
+        let mut day = Vec::new();
         let lines = texture.lines();
         for line in lines {
             let row: Vec<char> = line.chars().rev().collect();
-            tex.push(row);
+            day.push(row);
         }
-        self.texture = Some(tex);
+        if let Some(texture) = &mut self.texture {
+            texture.day = day;
+        } else {
+            self.texture = Some(Texture::new(day, None, palette));
+        }
         self
     }
-    pub fn with_texture_at(self, path: &str) -> Self {
+
+    /// Sets the night texture to be displayed on the globe.
+    pub fn with_night_texture(mut self, texture: &str, palette: Option<Vec<char>>) -> Self {
+        let mut night = Vec::new();
+        let lines = texture.lines();
+        for line in lines {
+            let row: Vec<char> = line.chars().rev().collect();
+            night.push(row);
+        }
+
+        if let Some(texture) = &mut self.texture {
+            texture.night = Some(night);
+        } else {
+            self.texture = Some(Texture::new(night.clone(), Some(night), palette));
+        }
+
+        self
+    }
+
+    /// Sets the day texture to be loaded from the given path.
+    pub fn with_texture_at(self, path: &str, palette: Option<Vec<char>>) -> Self {
         let mut file = File::open(path).unwrap();
         let mut out_string = String::new();
         file.read_to_string(&mut out_string).unwrap();
-        self.with_texture(&out_string)
+        self.with_texture(&out_string, palette)
     }
+
+    /// Sets the night display toggle to the given value.
+    pub fn display_night(mut self, b: bool) -> Self {
+        self.display_night = b;
+        self
+    }
+
+    /// Builds new `Globe` from the collected configuration settings.
     pub fn build(mut self) -> Globe {
         if let Some(template) = &self.template {
             match template {
-                GlobeTemplate::Earth => self = self.with_texture(EARTH_TEXTURE),
+                GlobeTemplate::Earth => {
+                    let palette = vec![
+                        ' ', '.', ':', ';', '\'', ',', 'w', 'i', 'o', 'g', 'O', 'L', 'X', 'H', 'W',
+                        'Y', 'V', '@',
+                    ];
+                    self = self
+                        .with_texture(EARTH_TEXTURE, Some(palette.clone()))
+                        .with_night_texture(EARTH_NIGHT_TEXTURE, Some(palette))
+                }
             }
         }
         let texture = self.texture.expect("texture not provided");
@@ -202,15 +287,19 @@ impl GlobeConfig {
             radius: self.radius.unwrap_or(1.),
             angle: self.angle.unwrap_or(0.),
             texture,
-            texture_night: self.texture_night,
+            display_night: self.display_night,
         }
     }
 }
 
+/// Built-in globe template enumeration.
 pub enum GlobeTemplate {
     Earth,
+    // Moon,
+    // Mars,
 }
 
+/// Camera configuration struct implementing the builder pattern.
 pub struct CameraConfig {
     radius: Float,
     alpha: Float,
@@ -218,6 +307,13 @@ pub struct CameraConfig {
 }
 
 impl CameraConfig {
+    /// Creates a new `CameraConfig`.
+    ///
+    /// # Arguments
+    ///
+    /// - `r` is the distance from the camera to the origin.
+    /// - `alfa` is camera's angle along the xy plane.
+    /// - `beta` is camera's angle along z axis.
     pub fn new(radius: Float, alpha: Float, beta: Float) -> Self {
         Self {
             radius,
@@ -225,6 +321,8 @@ impl CameraConfig {
             beta,
         }
     }
+
+    /// Creates a new `CameraConfig` using default values.
     pub fn default() -> Self {
         Self {
             radius: 2.,
@@ -232,36 +330,29 @@ impl CameraConfig {
             beta: 0.,
         }
     }
+
+    /// Builds a camera from the collected config information.
     pub fn build(&self) -> Camera {
-        Camera::new(self.radius, self.alpha, self.beta)
+        let mut camera = Camera::default();
+        camera.update(self.radius, self.alpha, self.beta);
+        camera
     }
 }
 
-fn find_index(c: char, s: &[char]) -> Int {
-    for (i, &si) in s.iter().enumerate() {
-        if c == si {
-            return i as Int;
-        }
-    }
-
-    -1
-}
-
+#[derive(Default)]
 pub struct Camera {
-    pub x: Float,
-    pub y: Float,
-    pub z: Float,
+    x: Float,
+    y: Float,
+    z: Float,
     matrix: [Float; 16],
     inv: [Float; 16],
 }
 
 impl Camera {
-    // alfa is camera's angle along the xy plane.
-    // beta is camera's angle along z axis
-    // r is the distance from the camera to the origin
-    pub fn new(r: Float, alfa: Float, beta: Float) -> Self {
-        let sin_a = alfa.sin();
-        let cos_a = alfa.cos();
+    /// Updates the camera using new data.
+    pub fn update(&mut self, r: Float, alpha: Float, beta: Float) {
+        let sin_a = alpha.sin();
+        let cos_a = alpha.cos();
         let sin_b = beta.sin();
         let cos_b = beta.cos();
 
@@ -294,18 +385,24 @@ impl Camera {
         matrix[14] = z;
 
         let mut inv = [0.; 16];
-
-        // invert
         invert(&mut inv, matrix);
 
-        Camera {
-            x,
-            y,
-            z,
-            matrix,
-            inv,
+        self.x = x;
+        self.y = y;
+        self.z = z;
+        self.matrix = matrix;
+        self.inv = inv;
+    }
+}
+
+/// Get index of the given character on the palette.
+fn find_index(target: char, palette: &[char]) -> Int {
+    for (i, &ch) in palette.iter().enumerate() {
+        if target == ch {
+            return i as Int;
         }
     }
+    -1
 }
 
 fn transform_vector(vec: &mut [Float; 3], m: [Float; 16]) {
@@ -479,12 +576,14 @@ fn rotate_x(vec: &mut [Float; 3], theta: Float) {
     let m: [Float; 9] = [1., 0., 0., 0., b, -a, 0., a, b];
     transform_vector2(vec, &m);
 }
+
 fn rotate_y(vec: &mut [Float; 3], theta: Float) {
     let a = theta.sin();
     let b = theta.cos();
     let m: [Float; 9] = [b, 0., a, 0., 1., 0., -a, 0., b];
     transform_vector2(vec, &m);
 }
+
 fn rotate_z(vec: &mut [Float; 3], theta: Float) {
     let a = theta.sin();
     let b = theta.cos();
