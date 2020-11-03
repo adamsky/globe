@@ -4,7 +4,7 @@ fn main() {
     // use config builder to create a new globe struct
     let globe = GlobeConfig::new()
         // specify path to the texture file
-        .with_texture_at("textures/earth.txt")
+        .with_texture_at("textures/earth.txt", None)
         // for built-in textures try using a template
         //.use_template(GlobeTemplate::Earth)
         .with_camera(CameraConfig::default())
