@@ -100,7 +100,7 @@ globe -in --texture ./path-to-texture --texture-night ./path-to-night-texture
 To use `globe` within your Rust project, add it to your dependencies:
 ```
 [dependencies]
-globe = "0.1.2"
+globe = "0.2.0"
 ```
 
 First create a `Globe`:
