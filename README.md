@@ -71,7 +71,7 @@ globe -snc2 -g10
 If you want to adjust things at runtime check out the *interactive mode*.
 Here you can pan the globe around using either the mouse or keyboard arrows:
 ```
-globe -inc2 -g10
+globe -i
 ```
 
 Use `+` and `-` to control the globe rotation speed, `,` and `.` to control
@@ -80,7 +80,7 @@ the camera rotation speed, `PgUp` and `PgDown` to control the camera zoom,
 
 Settings we used on the *screensaver mode* also work:
 ```
-globe -i
+globe -inc2 -g10
 ```
 
 Last but not least there is the *listing mode*. It allows you to pass location
