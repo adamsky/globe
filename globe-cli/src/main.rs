@@ -127,8 +127,7 @@ fn main() {
                 .help("Display a built-in globe template")
                 .takes_value(true)
                 .value_name("planet")
-                .default_value("earth")
-                .required_unless_present("texture"),
+                .default_value("earth"),
         )
         .arg(
             Arg::new("texture")
