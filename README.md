@@ -7,6 +7,10 @@ spin in the background.
 
 ## Changelog
 
+v0.2.1:
+- upgraded `clap` dependency to `3.0.0`
+- changed `globe-cli` `template` argument to not be required
+
 v0.2.0:
 - added multiple CLI arguments for setting up the scene (`refresh-rate`, 
 `globe-rotation`, `cam-rotation`, `cam-zoom`, `location`, `focus-speed`,
