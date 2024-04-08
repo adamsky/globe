@@ -1,6 +1,6 @@
 [package]
 name = "globe-cli"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["adamsky <adamsky@enum.space>"]
 edition = "2018"
 repository = "https://github.com/adamsky/globe"
