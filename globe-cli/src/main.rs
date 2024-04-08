@@ -51,20 +51,20 @@ fn main() {
                 .short('i')
                 .long("interactive")
                 .display_order(0)
-                .about("Interactive mode (input enabled)"),
+                .help("Interactive mode (input enabled)"),
         )
         .arg(
             Arg::new("screensaver")
                 .short('s')
                 .long("screensaver")
                 .display_order(1)
-                .about("Screensaver mode (input disabled)"),
+                .help("Screensaver mode (input disabled)"),
         )
         .arg(
             Arg::new("refresh_rate")
                 .short('r')
                 .long("refresh-rate")
-                .about("Refresh rate in frames per second")
+                .help("Refresh rate in frames per second")
                 .takes_value(true)
                 .value_name("fps")
                 .default_value("60"),
@@ -73,7 +73,7 @@ fn main() {
             Arg::new("globe_rotation")
                 .short('g')
                 .long("globe-rotation")
-                .about("Starting globe rotation speed")
+                .help("Starting globe rotation speed")
                 .takes_value(true)
                 .value_name("move_per_frame")
                 .default_value("0"),
@@ -82,7 +82,7 @@ fn main() {
             Arg::new("cam_rotation")
                 .short('c')
                 .long("cam-rotation")
-                .about("Starting camera rotation speed")
+                .help("Starting camera rotation speed")
                 .takes_value(true)
                 .value_name("move_per_frame")
                 .default_value("0"),
@@ -91,7 +91,7 @@ fn main() {
             Arg::new("cam_zoom")
                 .short('z')
                 .long("cam-zoom")
-                .about("Starting camera zoom")
+                .help("Starting camera zoom")
                 .takes_value(true)
                 .value_name("distance")
                 .default_value("1.7"),
@@ -100,7 +100,7 @@ fn main() {
             Arg::new("focus_speed")
                 .short('f')
                 .long("focus-speed")
-                .about("Target focusing animation speed")
+                .help("Target focusing animation speed")
                 .takes_value(true)
                 .value_name("multiplier")
                 .default_value("1"),
@@ -109,7 +109,7 @@ fn main() {
             Arg::new("location")
                 .short('l')
                 .long("location")
-                .about("Starting location coordinates")
+                .help("Starting location coordinates")
                 .takes_value(true)
                 .value_name("coords")
                 .default_value("0.4,0.6"),
@@ -118,13 +118,13 @@ fn main() {
             Arg::new("night")
                 .short('n')
                 .long("night")
-                .about("Enable displaying the night side of the globe"),
+                .help("Enable displaying the night side of the globe"),
         )
         .arg(
             Arg::new("template")
                 .short('t')
                 .long("template")
-                .about("Display a built-in globe template")
+                .help("Display a built-in globe template")
                 .takes_value(true)
                 .value_name("planet")
                 .default_value("earth")
@@ -133,14 +133,14 @@ fn main() {
         .arg(
             Arg::new("texture")
                 .long("texture")
-                .about("Apply custom texture from file")
+                .help("Apply custom texture from file")
                 .takes_value(true)
                 .value_name("path"),
         )
         .arg(
             Arg::new("texture_night")
                 .long("texture-night")
-                .about("Apply custom night side texture from file")
+                .help("Apply custom night side texture from file")
                 .takes_value(true)
                 .value_name("path"),
         )
@@ -148,7 +148,7 @@ fn main() {
             Arg::new("pipe")
                 .short('p')
                 .long("pipe")
-                .about("Read coordinates from stdin and display them on the globe"),
+                .help("Read coordinates from stdin and display them on the globe"),
         );
     let matches = app.get_matches();
 
